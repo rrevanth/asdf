@@ -5,10 +5,20 @@ _asdf () {
   local cmd=${COMP_WORDS[1]}
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local plugins=$(asdf plugin-list | tr '\n' ' ')
+  local plugdir=$HOME/.asdf-plugins/plugins
 
   COMPREPLY=()
 
   case "$cmd" in
+    plugin-add)
+        IFS=$'\x0a'
+        local strings=$(for f in $plugdir/*; do \
+            echo -n "$f " | awk -F/ '{printf $NF}' ;\
+            awk 'END {print $NF}' "$f"; done)
+        COMPREPLY=($(compgen -W "$strings" -- $cur))
+        unset IFS
+        return 0
+        ;;
     plugin-update)
       COMPREPLY=($(compgen -W "$plugins --all" -- $cur))
       ;;
@@ -23,7 +33,7 @@ _asdf () {
         COMPREPLY=($(compgen -W "$plugins" -- $cur))
       fi
       ;;
-    uninstall|where|reshim|local|global)
+    uninstall|where|reshim)
       if [[ "$plugins" == *"$prev"* ]] ; then
         local versions=$(asdf list $prev)
         COMPREPLY=($(compgen -W "$versions" -- $cur))
@@ -32,7 +42,7 @@ _asdf () {
       fi
       ;;
     *)
-      local cmds='plugin-add plugin-list plugin-remove plugin-update install uninstall update current where which list list-all local global reshim'
+      local cmds='plugin-add plugin-list plugin-remove plugin-update install uninstall update current where list list-all reshim'
       COMPREPLY=($(compgen -W "$cmds" -- $cur))
       ;;
   esac
